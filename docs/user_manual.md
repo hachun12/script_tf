@@ -142,9 +142,7 @@ python cli.py ui
 └─────────────────────────────────────────────────────────────┘
 ```
 
-> **截圖位置：** 建議在此插入完整 UI 畫面截圖
-> 
-> 📸 `screenshots/ui_overview.png`
+![介面總覽](screenshots/ui_overview.png)
 
 **介面元素說明：**
 
@@ -170,7 +168,7 @@ python cli.py ui
 2. 選擇機器人劇本檔案（支援 `.ls`、`.mod`、`.src`、`.script` 等）
 3. 系統自動偵測品牌並填入程式碼區
 
-> 📸 `screenshots/upload_file.png`
+![上傳檔案](screenshots/upload_file.png)
 
 **方式 B — 直接貼入：**
 
@@ -185,7 +183,7 @@ python cli.py ui
 
 點擊 **「▶ 轉換」** 按鈕，轉換結果會顯示在中欄的程式碼區（含行號）。
 
-> 📸 `screenshots/conversion_result.png`
+![轉換結果](screenshots/conversion_result.png)
 
 底部狀態列會顯示轉換結果摘要，例如：
 
@@ -211,8 +209,11 @@ python cli.py ui
 2. 點擊「送出」或按 Enter
 3. 系統解析指令後**直接套用修改**，目標劇本立即更新
 4. 對話區會顯示修改摘要（如哪些行的速度從多少改為多少）
+5. 也可以直接進行自然會話互動 (如:這段劇本在做什麼、劇本邏輯、有沒有優化空間等...)
 
-> 📸 `screenshots/chat_modify_speed.png`
+![對話修改速度](screenshots/chat_modify_speed.png)
+
+![自然語言對話](screenshots/chat.png)
 
 #### 常見對話指令範例
 
@@ -294,7 +295,7 @@ python cli.py ui
 ...
 ```
 
-> 📸 `screenshots/conversion_report.png`
+![轉換報告](screenshots/conversion_report.png)
 
 ---
 
