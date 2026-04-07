@@ -1,0 +1,22 @@
+// 取放料範例程式
+// PMC Ruby Controller
+MOVE_POINT  P0  VEL=40  ACC=30  BASE=0  TOOL=1
+// 接近取料點
+MOVE_LINE  P1  VEL=20
+MOVE_LINE  P2  VEL=10  CONT=10
+// 夾取工件
+IO  OUT1[0]=ON
+DELAY  500
+// 確認夾取
+WAITFOR  IN1[0]==ON
+// 抬起
+MOVE_LINE  P3  VEL=15
+// 移動到放料位置
+MOVE_POINT  P4  VEL=50  CONT=20
+MOVE_LINE  P5  VEL=10
+// 放開工件
+IO  OUT1[0]=OFF
+DELAY  300
+// 退回安全位置
+MOVE_LINE  P6  VEL=20  CONT=10
+MOVE_POINT  P0  VEL=40

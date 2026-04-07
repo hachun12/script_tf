@@ -1,0 +1,30 @@
+DEF fanuc_sample()
+; [WARNING] /PROG PICK_PLACE -- 此指令無法自動轉換，需人工確認
+; [WARNING] /ATTR -- 此指令無法自動轉換，需人工確認
+; [WARNING] /MN -- 此指令無法自動轉換，需人工確認
+; 設定工具與座標系
+$TOOL=TOOL_DATA[1]
+$BASE=BASE_DATA[0]
+; 移動到安全位置
+PTP 1 Vel=50% 
+; 接近取料點
+LIN 2 Vel=0 m/s C_DIS
+LIN 3 Vel=0 m/s 
+; 夾取工件
+$OUT[1]=TRUE
+WAIT SEC 0.5
+; 確認夾取
+WAIT FOR $IN[1]==ON
+; 抬起
+LIN 4 Vel=0 m/s 
+; 移動到放料位置
+PTP 5 Vel=80% C_PTP
+LIN 6 Vel=0 m/s 
+; 放開工件
+$OUT[1]=FALSE
+WAIT SEC 0.3
+; 退回安全位置
+LIN 7 Vel=0 m/s C_DIS
+PTP 1 Vel=50% 
+; [WARNING] /END -- 此指令無法自動轉換，需人工確認
+END

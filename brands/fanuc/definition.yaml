@@ -1,0 +1,90 @@
+brand: FANUC
+description: "FANUC 機器人 (TP/LS 語言)"
+file_extensions: [".ls", ".tp"]
+comment_prefix: "!"
+
+coordinate_system: "cartesian & joint"
+units:
+  linear: mm
+  angular: deg
+  velocity_linear: mm/sec
+  velocity_angular: deg/sec
+  time: s
+
+# ── 命令定義 ──
+commands:
+  move_joint:
+    ir_action: move_joint
+    pattern: "J P[{point}] {speed}% {blend_mode}"
+    emit_template: "  J P[{point}] {speed}% {blend_mode}"
+    blend_map:
+      fine: "FINE"
+      continuous: "CNT{blend}"
+    example: "J P[1] 100% FINE"
+    description: "關節運動 (PTP)"
+
+  move_linear:
+    ir_action: move_linear
+    pattern: "L P[{point}] {v}mm/sec {blend_mode}"
+    emit_template: "  L P[{point}] {v}mm/sec {blend_mode}"
+    blend_map:
+      fine: "FINE"
+      continuous: "CNT{blend}"
+    example: "L P[1] 500mm/sec FINE"
+    description: "直線運動"
+
+  move_circular:
+    ir_action: move_circular
+    pattern: "C P[{via_point}] P[{point}] {v}mm/sec {blend_mode}"
+    emit_template: "  C P[{via_point}] P[{point}] {v}mm/sec {blend_mode}"
+    example: "C P[2] P[3] 200mm/sec FINE"
+    description: "圓弧運動"
+
+  set_digital_output:
+    ir_action: set_digital_output
+    pattern: "DO[{port}]={value}"
+    emit_template: "  DO[{port}]={value}"
+    value_map:
+      "ON": 1
+      "OFF": 0
+    example: "DO[1]=ON"
+    description: "設定數位輸出"
+
+  wait_digital_input:
+    ir_action: wait_digital_input
+    pattern: "WAIT DI[{port}]={value}"
+    emit_template: "  WAIT DI[{port}]={value}"
+    example: "WAIT DI[1]=ON"
+    description: "等待數位輸入"
+
+  wait_time:
+    ir_action: wait_time
+    pattern: "WAIT {time}(sec)"
+    emit_template: "  WAIT {time}(sec)"
+    example: "WAIT 1.5(sec)"
+    description: "等待指定時間"
+
+  set_tool:
+    ir_action: set_tool
+    pattern: "UTOOL_NUM={id}"
+    emit_template: "  UTOOL_NUM={id}"
+    example: "UTOOL_NUM=1"
+    description: "設定工具座標"
+
+  set_base:
+    ir_action: set_base
+    pattern: "UFRAME_NUM={id}"
+    emit_template: "  UFRAME_NUM={id}"
+    example: "UFRAME_NUM=0"
+    description: "設定使用者座標"
+
+  call_program:
+    ir_action: call_program
+    pattern: "CALL {name}"
+    emit_template: "  CALL {name}"
+    example: "CALL SUB_PROG1"
+    description: "呼叫子程式"
+
+# ── 檔案結構模板 ──
+file_header: "/PROG {name}\n/ATTR\n/MN"
+file_footer: "/END"

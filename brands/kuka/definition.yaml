@@ -1,0 +1,99 @@
+brand: KUKA
+description: "KUKA 機器人 (KRL 語言)"
+file_extensions: [".src", ".krl"]
+comment_prefix: ";"
+
+coordinate_system: "cartesian & joint"
+units:
+  linear: mm
+  angular: deg
+  velocity_linear: m/s
+  velocity_angular: deg/s
+  time: s
+
+# KUKA 速度單位為 m/s，需要從 IR 的 mm/s 做轉換
+unit_conversion:
+  velocity_linear:
+    from_ir: 0.001  # mm/s → m/s (乘以此係數)
+    to_ir: 1000     # m/s → mm/s
+
+# ── 命令定義 ──
+commands:
+  move_joint:
+    ir_action: move_joint
+    pattern: "PTP {point} Vel={speed}% {blend_mode}"
+    emit_template: "PTP {point} Vel={speed}% {blend_mode}"
+    blend_map:
+      fine: ""
+      continuous: "C_PTP"
+    example: "PTP P1 Vel=100% C_PTP"
+    description: "點對點運動 (PTP)"
+
+  move_linear:
+    ir_action: move_linear
+    pattern: "LIN {point} Vel={v} m/s {blend_mode}"
+    emit_template: "LIN {point} Vel={v} m/s {blend_mode}"
+    blend_map:
+      fine: ""
+      continuous: "C_DIS"
+    example: "LIN P1 Vel=0.5 m/s C_DIS"
+    description: "直線運動"
+
+  move_circular:
+    ir_action: move_circular
+    pattern: "CIRC {via_point},{point} Vel={v} m/s {blend_mode}"
+    emit_template: "CIRC {via_point},{point} Vel={v} m/s {blend_mode}"
+    example: "CIRC P2,P3 Vel=0.2 m/s"
+    description: "圓弧運動"
+
+  set_digital_output:
+    ir_action: set_digital_output
+    pattern: "$OUT[{port}]={value}"
+    emit_template: "$OUT[{port}]={value}"
+    value_map:
+      "TRUE": 1
+      "FALSE": 0
+    example: "$OUT[1]=TRUE"
+    description: "設定數位輸出"
+
+  wait_digital_input:
+    ir_action: wait_digital_input
+    pattern: "WAIT FOR $IN[{port}]=={value}"
+    emit_template: "WAIT FOR $IN[{port}]=={value}"
+    value_map:
+      "TRUE": 1
+      "FALSE": 0
+    example: "WAIT FOR $IN[1]==TRUE"
+    description: "等待數位輸入"
+
+  wait_time:
+    ir_action: wait_time
+    pattern: "WAIT SEC {time}"
+    emit_template: "WAIT SEC {time}"
+    example: "WAIT SEC 1.5"
+    description: "等待指定時間"
+
+  set_tool:
+    ir_action: set_tool
+    pattern: "$TOOL=TOOL_DATA[{id}]"
+    emit_template: "$TOOL=TOOL_DATA[{id}]"
+    example: "$TOOL=TOOL_DATA[1]"
+    description: "設定工具座標"
+
+  set_base:
+    ir_action: set_base
+    pattern: "$BASE=BASE_DATA[{id}]"
+    emit_template: "$BASE=BASE_DATA[{id}]"
+    example: "$BASE=BASE_DATA[0]"
+    description: "設定基座標"
+
+  call_program:
+    ir_action: call_program
+    pattern: "{name}()"
+    emit_template: "{name}()"
+    example: "SubProg1()"
+    description: "呼叫子程式"
+
+# ── 檔案結構模板 ──
+file_header: "DEF {name}()"
+file_footer: "END"

@@ -1,0 +1,132 @@
+brand: RUBY
+description: "PMC 自研控制器 (Ruby Script)"
+file_extensions: [".script", ".rb"]
+comment_prefix: "//"
+
+coordinate_system: "cartesian & joint"
+units:
+  linear: mm
+  angular: deg
+  velocity_linear: mm/s     # MOVE_LINE 用 mm/s, MOVE_POINT 用 deg/s
+  velocity_angular: deg/s
+  acceleration_linear: mm/s^2
+  acceleration_angular: deg/s^2
+  time: ms                  # DELAY 的單位是 ms
+
+# Ruby 使用自訂 parser/emitter（語法較複雜）
+# 以下命令定義供 emitter 模板使用，以及供驗證器檢查
+
+commands:
+  move_joint:
+    ir_action: move_joint
+    pattern: "MOVE_POINT"
+    emit_template: "MOVE_POINT  P{point}"
+    description: "點到點移動 (PTP)"
+    notes: |
+      主要參數可為：
+        P<int> 記錄點位
+        A<int>=<double> 各軸角度
+        T<X|Y|Z|A|B|C>=<double> 工具末端座標
+      次要參數：VEL, ACC, BASE, TOOL, CONT
+
+  move_joint_rel:
+    ir_action: move_joint
+    pattern: "MOVE_POINT_REL"
+    emit_template: "MOVE_POINT_REL"
+    description: "點到點相對移動"
+
+  move_linear:
+    ir_action: move_linear
+    pattern: "MOVE_LINE"
+    emit_template: "MOVE_LINE  P{point}"
+    description: "直線移動"
+    notes: "主要參數不可為各軸角度 A<int>"
+
+  move_linear_rel:
+    ir_action: move_linear
+    pattern: "MOVE_LINE_REL"
+    emit_template: "MOVE_LINE_REL"
+    description: "直線相對移動"
+
+  move_circular:
+    ir_action: move_circular
+    pattern: "MOVE_CIRCLE"
+    emit_template: "MOVE_CIRCLE  P{via_point}  P{point}"
+    description: "圓弧三點移動"
+    notes: "主要參數必須為二個 P<int>，可用 THETA 指定圓弧角度"
+
+  set_digital_output:
+    ir_action: set_digital_output
+    pattern: "IO"
+    emit_template: "IO  OUT{module}[{bit}]={value}"
+    value_map:
+      "ON": 1
+      "OFF": 0
+    description: "設定數位輸出 (Output)"
+    notes: "格式: IO OUT<module>[<bit>]=ON|OFF"
+
+  wait_digital_input:
+    ir_action: wait_digital_input
+    pattern: "WAITFOR"
+    emit_template: "WAITFOR  IN{module}[{bit}]=={value}"
+    description: "等待數位輸入條件成立"
+    notes: "格式: WAITFOR IN<module>[<bit>]==ON|OFF"
+
+  wait_time:
+    ir_action: wait_time
+    pattern: "DELAY"
+    emit_template: "DELAY  {time}"
+    description: "延遲指定毫秒數"
+    notes: "單位: 毫秒 (ms)"
+
+  set_tool:
+    ir_action: set_tool
+    pattern: "TOOL="
+    emit_template: "TOOL={id}"
+    description: "設定工具編號（作為運動指令的次要參數）"
+
+  set_base:
+    ir_action: set_base
+    pattern: "BASE="
+    emit_template: "BASE={id}"
+    description: "設定基座標編號（作為運動指令的次要參數）"
+
+  call_program:
+    ir_action: call_program
+    pattern: "CALL"
+    emit_template: "CALL  {name}"
+    description: "呼叫副函式"
+    notes: "副函式為 .script 檔案，位於 ProjectSource 資料夾"
+
+  set_variable:
+    ir_action: comment
+    pattern: "SET"
+    emit_template: "SET  V{var}={value}"
+    description: "設定變數值或四則運算"
+
+# 特殊指令（由自訂 parser 處理）
+special_commands:
+  - name: "POLISH_LINE"
+    description: "直線拋光（自動產生沿直線的連續畫圓路徑）"
+    ir_mapping: "raw_action（需人工確認）"
+  - name: "POLISH_CIRCLE"
+    description: "倒圓角拋光"
+    ir_mapping: "raw_action（需人工確認）"
+  - name: "LOOP/BREAK/END"
+    description: "迴圈控制"
+    ir_mapping: "raw_action（需人工確認）"
+  - name: "IF/ELSEIF/ELSE/END"
+    description: "條件判斷"
+    ir_mapping: "raw_action（需人工確認）"
+  - name: "SYNC"
+    description: "多劇本同步"
+    ir_mapping: "raw_action（需人工確認）"
+  - name: "COMM_*"
+    description: "通訊指令（Socket 收發）"
+    ir_mapping: "raw_action（需人工確認）"
+  - name: "VISION"
+    description: "視覺辨識"
+    ir_mapping: "raw_action（需人工確認）"
+
+file_header: ""
+file_footer: ""

@@ -1,0 +1,11 @@
+# 核心依賴
+pyyaml>=6.0
+
+# Web UI
+gradio>=4.0
+
+# 測試
+pytest>=7.0
+
+# PDF 讀取（開發時使用，非必要）
+# pymupdf>=1.23

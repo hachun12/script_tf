@@ -1,0 +1,106 @@
+brand: ABB
+description: "ABB 機器人 (RAPID 語言)"
+file_extensions: [".mod", ".rapid"]
+comment_prefix: "!"
+
+coordinate_system: "cartesian & joint"
+units:
+  linear: mm
+  angular: deg
+  velocity_linear: mm/s
+  velocity_angular: deg/s
+  time: s
+
+# ── 速度預設值映射 ──
+# ABB 使用具名速度 (speeddata)，這裡定義常用速度對照
+speed_map:
+  50: "v50"
+  100: "v100"
+  200: "v200"
+  300: "v300"
+  500: "v500"
+  1000: "v1000"
+  2000: "v2000"
+  5000: "v5000"
+
+# zone (blend) 映射
+zone_map:
+  0: "fine"
+  1: "z1"
+  5: "z5"
+  10: "z10"
+  15: "z15"
+  20: "z20"
+  50: "z50"
+  100: "z100"
+
+# ── 命令定義 ──
+commands:
+  move_joint:
+    ir_action: move_joint
+    pattern: "MoveAbsJ {point},{v},{blend_mode},{tool}"
+    emit_template: "    MoveAbsJ {point},{v},{blend_mode},{tool};"
+    blend_map:
+      fine: "fine"
+      continuous: "z{blend}"
+    example: "MoveAbsJ p1,v1000,fine,tool0;"
+    description: "絕對關節運動"
+
+  move_linear:
+    ir_action: move_linear
+    pattern: "MoveL {point},{v},{blend_mode},{tool}"
+    emit_template: "    MoveL {point},{v},{blend_mode},{tool};"
+    blend_map:
+      fine: "fine"
+      continuous: "z{blend}"
+    example: "MoveL p1,v500,fine,tool0;"
+    description: "直線運動"
+
+  move_circular:
+    ir_action: move_circular
+    pattern: "MoveC {via_point},{point},{v},{blend_mode},{tool}"
+    emit_template: "    MoveC {via_point},{point},{v},{blend_mode},{tool};"
+    example: "MoveC p2,p3,v200,z10,tool0;"
+    description: "圓弧運動"
+
+  set_digital_output:
+    ir_action: set_digital_output
+    pattern: "SetDO {port},{value}"
+    emit_template: "    SetDO do_{port},{value};"
+    value_map:
+      "1": 1
+      "0": 0
+    example: "SetDO do_1,1;"
+    description: "設定數位輸出"
+
+  wait_digital_input:
+    ir_action: wait_digital_input
+    pattern: "WaitDI {port},{value}"
+    emit_template: "    WaitDI di_{port},{value};"
+    example: "WaitDI di_1,1;"
+    description: "等待數位輸入"
+
+  wait_time:
+    ir_action: wait_time
+    pattern: "WaitTime {time}"
+    emit_template: "    WaitTime {time};"
+    example: "WaitTime 1.5;"
+    description: "等待指定時間"
+
+  set_tool:
+    ir_action: set_tool
+    pattern: "PERS tooldata {name}"
+    emit_template: "    ! Set tool: tool{id}"
+    example: "PERS tooldata tool1:=[...]"
+    description: "設定工具座標"
+
+  call_program:
+    ir_action: call_program
+    pattern: "{name}"
+    emit_template: "    {name};"
+    example: "SubRoutine1;"
+    description: "呼叫程序"
+
+# ── 檔案結構模板 ──
+file_header: "MODULE {name}\n  PROC main()"
+file_footer: "  ENDPROC\nENDMODULE"
