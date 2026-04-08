@@ -11,15 +11,94 @@
               (規則式意圖解析 + LLM 輔助)
 ```
 
-## 快速開始
+## 系統需求
+
+- **Python** 3.10 以上（建議 3.11+）
+- **作業系統**：Windows / macOS / Linux
+- **Ollama**（選用）：若需要進階 AI 對話功能
+
+## 完整部署步驟
+
+### 1. 安裝 Python
+
+前往 [python.org](https://www.python.org/downloads/) 下載安裝 Python 3.11+。
+安裝時請勾選 **「Add Python to PATH」**。
+
+驗證安裝：
+```bash
+python --version   # 應顯示 3.10 以上
+```
+
+### 2. 下載專案
 
 ```bash
-# 安裝依賴
-pip install -r requirements.txt
+git clone https://github.com/hachun12/script_tf.git
+cd script_tf
+```
 
+### 3. 建立虛擬環境（建議）
+
+```bash
+# Windows
+python -m venv venv
+venv\Scripts\activate
+
+# macOS / Linux
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### 4. 安裝 Python 依賴
+
+```bash
+pip install -r requirements.txt
+```
+
+這會安裝以下套件：
+- `pyyaml` — YAML 品牌定義解析
+- `gradio` — Web UI 框架
+- `pytest` — 測試框架
+
+### 5. 安裝 Ollama（選用，進階 AI 對話功能）
+
+如果只需要規則式對話指令（如「把速度降低 30%」），可以跳過此步驟。
+安裝 Ollama 後才能使用自由自然語言對話功能。
+
+**安裝 Ollama：**
+
+前往 [ollama.com](https://ollama.com/) 下載安裝對應平台的版本。
+
+**下載模型：**
+
+```bash
+ollama pull llama3.2:3b
+```
+
+> 模型大小約 2GB，下載時間視網路速度而定。
+> 如需更高品質的回應，可改用較大模型：`ollama pull llama3.1:8b`（約 4.7GB），
+> 但需在 `llm/assistant.py` 中將 `OLLAMA_MODEL` 改為 `"llama3.1:8b"`。
+
+**啟動 Ollama 服務：**
+
+```bash
+ollama serve
+```
+
+> Windows 安裝後 Ollama 通常會自動在背景執行，可跳過此步驟。
+> 驗證是否運行：瀏覽器開啟 http://localhost:11434 應顯示 "Ollama is running"。
+
+### 6. 啟動服務
+
+```bash
 # 啟動 Web UI（推薦）
 python cli.py ui
+```
 
+啟動後開啟瀏覽器 http://localhost:7860 即可使用。
+
+## CLI 命令
+
+```bash
 # 列出已支援品牌
 python cli.py brands
 
@@ -39,8 +118,6 @@ python cli.py chat
 
 ## Web UI
 
-啟動 `python cli.py ui` 後開啟瀏覽器 http://localhost:7860
-
 三欄式介面：
 - **左欄**：上傳或貼入來源劇本，選擇來源品牌
 - **中欄**：轉換結果，選擇目標品牌，一鍵轉換
@@ -57,14 +134,11 @@ python cli.py chat
 - 「在第 5 行後加等待 DI[1]==ON」
 - 「在第 8 行後加 DO[2]=OFF」
 - 「解釋第 10 行」/ 「解釋第 5 到 10 行」
+- 也可以直接進行自然會話互動（如：這段劇本在做什麼、劇本邏輯、有沒有優化空間等）
 
 ### 進階對話（需要 Ollama）
 
-安裝並啟動 Ollama 後，可使用更自由的自然語言：
-```bash
-ollama pull qwen2.5-coder:7b
-ollama serve
-```
+安裝 Ollama 並下載模型後（見上方部署步驟第 5 步），可使用更自由的自然語言對話。
 
 ## 已支援品牌
 
