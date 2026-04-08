@@ -316,6 +316,15 @@ CSS_TEXT = """
     background: #f8fafc !important;
 }
 
+/* 右欄 AI 助手 - 自動填滿高度 */
+.col-chat { display: flex !important; flex-direction: column !important; }
+.col-chat > .block { flex: 1 !important; display: flex !important; flex-direction: column !important; }
+.col-chat .tabs { flex: 1 !important; display: flex !important; flex-direction: column !important; margin: 0 !important; }
+.col-chat .tabitem { flex: 1 !important; display: flex !important; flex-direction: column !important; padding: 4px 10px !important; }
+.col-chat .chatbot-box { flex: 1 !important; min-height: 200px !important; margin: 0 !important; }
+.col-chat .chatbot-box > div { height: 100% !important; }
+.col-chat .gap { gap: 6px !important; }
+
 /* 欄位內部 padding */
 .col-source > .block, .col-target > .block, .col-chat > .block {
     padding: 0 !important;
@@ -324,6 +333,10 @@ CSS_TEXT = """
 .col-source .block, .col-target .block, .col-chat .block {
     padding-left: 14px !important;
     padding-right: 14px !important;
+}
+.col-chat .block {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
 }
 
 /* 隱藏 footer */
@@ -426,7 +439,7 @@ def build_ui() -> gr.Blocks:
 
                     with gr.Tab("對話編修"):
                         chatbot = gr.Chatbot(
-                            label="對話", height=260,
+                            label="對話",
                             elem_classes=["chatbot-box"],
                         )
                         with gr.Group(
