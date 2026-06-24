@@ -249,6 +249,19 @@ CSS_TEXT = """
     background: #f0fdf4 !important; color: #1e293b !important; border: 1px solid #86efac !important;
     border-radius: 4px !important;
 }
+/* gr.Code 用 CodeMirror 渲染，不是 textarea，文字顏色要單獨覆寫 */
+.code-area .cm-editor, .code-area .cm-scroller, .code-area .cm-gutters {
+    background: #f1f5f9 !important;
+}
+.code-area .cm-content, .code-area .cm-line, .code-area .cm-gutterElement {
+    color: #1e293b !important;
+}
+.code-area-target .cm-editor, .code-area-target .cm-scroller, .code-area-target .cm-gutters {
+    background: #f0fdf4 !important;
+}
+.code-area-target .cm-content, .code-area-target .cm-line, .code-area-target .cm-gutterElement {
+    color: #1e293b !important;
+}
 .report-area textarea {
     font-family: 'Consolas', monospace !important;
     font-size: 12px !important; line-height: 1.5 !important;
