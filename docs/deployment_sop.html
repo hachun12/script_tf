@@ -23,43 +23,19 @@
 <body>
 
 <h1>Script TF 容器化部署 SOP</h1>
-<p><span class="badge">版本 1.0</span><span class="badge">更新日期 2026-06-24</span></p>
+<p><span class="badge">版本 1.1</span><span class="badge">更新日期 2026-06-24</span></p>
 <p>目的：將 <strong>Script TF</strong>（跨品牌機器人劇本轉換工具）打包成 Docker image，部署到另一台 Ubuntu PC 上運行。目標機器的 <strong>Ollama 跑在 host（非容器）</strong>，提供進階 AI 對話功能。</p>
 
 <h2>0. 前置準備</h2>
 <table>
 <tr><th>項目</th><th>說明</th></tr>
-<tr><td>來源機器</td><td>已安裝 Docker（用於建置 image），本機 Windows 即可</td></tr>
-<tr><td>目標機器</td><td>Ubuntu 20.04+，已安裝 Docker CE</td></tr>
-<tr><td>傳輸方式</td><td>USB / SCP / 內部檔案伺服器（假設兩機無法直接 push 到同一個 registry）</td></tr>
+<tr><td>程式碼來源</td><td>GitHub repo（<code>https://github.com/hachun12/script_tf.git</code>），已含 <code>Dockerfile</code> 與 <code>.dockerignore</code></td></tr>
+<tr><td>目標機器</td><td>Ubuntu 20.04+，可連網（git clone 用）</td></tr>
 <tr><td>Ollama</td><td>目標機器上需自行安裝並啟動，容器不含 Ollama</td></tr>
 </table>
+<div class="note">本 SOP 採用「直接在目標 Ubuntu 機器上 git clone + build」流程，不需要在其他機器上建置後再傳輸 image。若目標機器無法連網/無法存取 GitHub，可參考最後的「附錄：離線傳輸 image（備案）」。</div>
 
-<h2>1. 在來源機器建置 Image</h2>
-<div class="step">
-<p>專案根目錄已包含 <code>Dockerfile</code> 與 <code>.dockerignore</code>。在專案目錄下執行：</p>
-<pre><code>docker build -t script-tf:latest .</code></pre>
-<p>建置完成後可驗證：</p>
-<pre><code>docker images | grep script-tf</code></pre>
-</div>
-
-<h2>2. 匯出 Image 成檔案</h2>
-<div class="step">
-<p>沒有共用 registry 時，用 <code>docker save</code> 將 image 打包成單一檔案：</p>
-<pre><code>docker save script-tf:latest -o script-tf.tar</code></pre>
-<p>壓縮以加快傳輸（選用）：</p>
-<pre><code>gzip script-tf.tar   # 產生 script-tf.tar.gz</code></pre>
-</div>
-<div class="note">若兩機都能存取同一個內部 registry，更建議用 <code>docker push / pull</code>，可省略 save/load 步驟。</div>
-
-<h2>3. 傳輸到目標 Ubuntu 機器</h2>
-<div class="step">
-<p>用 SCP（建議，假設可 SSH 連線）：</p>
-<pre><code>scp script-tf.tar.gz user@&lt;ubuntu-ip&gt;:/home/user/</code></pre>
-<p>或用 USB 隨身碟複製過去，再插到目標機器上。</p>
-</div>
-
-<h2>4. 目標機器安裝 Docker CE（若尚未安裝）</h2>
+<h2>1. 目標機器安裝 Docker CE（若尚未安裝）</h2>
 <div class="step">
 <pre><code># 移除舊版（若有）
 sudo apt-get remove docker docker-engine docker.io containerd runc
@@ -90,14 +66,20 @@ sudo docker --version
 newgrp docker</code></pre>
 </div>
 
-<h2>5. 載入 Image</h2>
+<h2>2. 取得程式碼並建置 Image</h2>
 <div class="step">
-<pre><code>gunzip script-tf.tar.gz          # 若有壓縮，先解壓
-docker load -i script-tf.tar
-docker images | grep script-tf   # 確認載入成功</code></pre>
+<pre><code># clone 專案
+git clone https://github.com/hachun12/script_tf.git
+cd script_tf
+
+# 建置 image
+docker build -t script-tf:latest .
+
+# 確認建置成功
+docker images | grep script-tf</code></pre>
 </div>
 
-<h2>6. 確認 Host 上的 Ollama</h2>
+<h2>3. 確認 Host 上的 Ollama</h2>
 <div class="step">
 <pre><code># 安裝（若尚未安裝）
 curl -fsSL https://ollama.com/install.sh | sh
@@ -117,7 +99,7 @@ curl http://localhost:11434
 </div>
 <div class="warn">容器需要透過 <code>host.docker.internal</code> 連到 host 上的 Ollama。Linux 上預設不支援這個 DNS 名稱，啟動容器時必須加上 <code>--add-host=host.docker.internal:host-gateway</code>（見下一步）。</div>
 
-<h2>7. 啟動容器</h2>
+<h2>4. 啟動容器</h2>
 <div class="step">
 <pre><code>docker run -d \
   --name script-tf \
@@ -143,7 +125,7 @@ curl http://localhost:11434
   script-tf:latest</code></pre>
 </div>
 
-<h2>8. 驗證部署</h2>
+<h2>5. 驗證部署</h2>
 <div class="step">
 <pre><code># 確認容器運行中
 docker ps
@@ -156,16 +138,17 @@ http://&lt;ubuntu-ip&gt;:7860</code></pre>
 <p>進入 Web UI 後，於右欄對話框測試自然語言指令，確認能連到 Ollama（若回應正常代表容器 → host 的連線成功）。</p>
 </div>
 
-<h2>9. 更新部署（後續版本）</h2>
+<h2>6. 更新部署（後續版本）</h2>
 <div class="step">
-<pre><code># 在來源機器重新 build + save，傳輸新的 tar 後，於目標機器：
+<pre><code>cd script_tf
+git pull
+docker build -t script-tf:latest .
 docker stop script-tf && docker rm script-tf
-docker load -i script-tf-new.tar
 docker run -d --name script-tf --restart unless-stopped -p 7860:7860 \
   --add-host=host.docker.internal:host-gateway script-tf:latest</code></pre>
 </div>
 
-<h2>10. 疑難排解</h2>
+<h2>7. 疑難排解</h2>
 <table>
 <tr><th>問題</th><th>排查方向</th></tr>
 <tr><td>瀏覽器無法開啟 7860</td><td>檢查 <code>docker ps</code> 容器是否在跑；檢查 Ubuntu 防火牆 <code>sudo ufw status</code>，需開放 7860</td></tr>
@@ -173,6 +156,27 @@ docker run -d --name script-tf --restart unless-stopped -p 7860:7860 \
 <tr><td>容器啟動後立即退出</td><td><code>docker logs script-tf</code> 查看錯誤訊息，常見為依賴安裝失敗或 port 衝突</td></tr>
 <tr><td>Ollama 連線被拒絕</td><td>確認 Ollama 監聽位址未被限制為僅 127.0.0.1（預設行為對容器是足夠的，因為走 host-gateway），必要時設定 <code>OLLAMA_HOST=0.0.0.0</code> 並重啟服務</td></tr>
 </table>
+
+<h2>附錄：離線傳輸 Image（備案）</h2>
+<div class="step">
+<p>若目標機器無法連網 / 無法存取 GitHub，改在一台已能 <code>docker build</code> 的機器上建置，再把 image 匯出傳輸過去：</p>
+<pre><code># 在來源機器（任何已裝 Docker 的機器）
+git clone https://github.com/hachun12/script_tf.git
+cd script_tf
+docker build -t script-tf:latest .
+docker save script-tf:latest -o script-tf.tar
+gzip script-tf.tar   # 產生 script-tf.tar.gz（選用，加快傳輸）</code></pre>
+<p>傳輸到目標 Ubuntu 機器：</p>
+<pre><code># SCP
+scp script-tf.tar.gz user@&lt;ubuntu-ip&gt;:/home/user/
+# 或用 USB 隨身碟複製過去</code></pre>
+<p>在目標機器上載入：</p>
+<pre><code>gunzip script-tf.tar.gz
+docker load -i script-tf.tar
+docker images | grep script-tf   # 確認載入成功</code></pre>
+<p>之後接續本 SOP 第 3 步（確認 Ollama）以後的流程即可。</p>
+</div>
+<div class="note">若兩機都能存取同一個內部 registry，更建議用 <code>docker push / pull</code>，可省略 save/load 步驟。</div>
 
 <h2>附錄：常用指令速查</h2>
 <pre><code># 進入容器內部 shell
