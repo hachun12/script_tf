@@ -14,6 +14,7 @@ LLM 對話助手
 from __future__ import annotations
 
 import json
+import os
 import re
 import copy
 from typing import Any, Optional
@@ -43,9 +44,9 @@ from llm.prompts import (
 )
 
 
-# Ollama API 預設設定
-OLLAMA_BASE_URL = "http://localhost:11434"
-OLLAMA_MODEL = "llama3.2:3b"
+# Ollama API 預設設定（可用環境變數覆寫，容器內需指向 host 上的 Ollama）
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:3b")
 
 
 class ScriptEditor:

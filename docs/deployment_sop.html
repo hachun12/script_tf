@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>Script TF 容器化部署 SOP</title>
+<style>
+  body { font-family: "Segoe UI", "Microsoft JhengHei", sans-serif; line-height: 1.7; max-width: 900px; margin: 40px auto; padding: 0 20px; color: #222; }
+  h1 { border-bottom: 3px solid #2c5f8a; padding-bottom: 10px; }
+  h2 { color: #2c5f8a; margin-top: 40px; border-left: 5px solid #2c5f8a; padding-left: 10px; }
+  h3 { color: #444; }
+  pre { background: #1e1e1e; color: #d4d4d4; padding: 14px 18px; border-radius: 6px; overflow-x: auto; font-size: 14px; }
+  code { background: #eef2f5; padding: 2px 6px; border-radius: 4px; font-size: 0.95em; }
+  pre code { background: none; padding: 0; }
+  .step { background: #f7f9fb; border: 1px solid #dde5ec; border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+  .note { background: #fff8e1; border-left: 4px solid #f0ad4e; padding: 10px 16px; margin: 12px 0; }
+  .warn { background: #fdecea; border-left: 4px solid #d9534f; padding: 10px 16px; margin: 12px 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+  th { background: #2c5f8a; color: white; }
+  .badge { display: inline-block; background: #2c5f8a; color: white; border-radius: 4px; padding: 2px 8px; font-size: 12px; margin-right: 6px; }
+</style>
+</head>
+<body>
+
+<h1>Script TF 容器化部署 SOP</h1>
+<p><span class="badge">版本 1.0</span><span class="badge">更新日期 2026-06-24</span></p>
+<p>目的：將 <strong>Script TF</strong>（跨品牌機器人劇本轉換工具）打包成 Docker image，部署到另一台 Ubuntu PC 上運行。目標機器的 <strong>Ollama 跑在 host（非容器）</strong>，提供進階 AI 對話功能。</p>
+
+<h2>0. 前置準備</h2>
+<table>
+<tr><th>項目</th><th>說明</th></tr>
+<tr><td>來源機器</td><td>已安裝 Docker（用於建置 image），本機 Windows 即可</td></tr>
+<tr><td>目標機器</td><td>Ubuntu 20.04+，已安裝 Docker CE</td></tr>
+<tr><td>傳輸方式</td><td>USB / SCP / 內部檔案伺服器（假設兩機無法直接 push 到同一個 registry）</td></tr>
+<tr><td>Ollama</td><td>目標機器上需自行安裝並啟動，容器不含 Ollama</td></tr>
+</table>
+
+<h2>1. 在來源機器建置 Image</h2>
+<div class="step">
+<p>專案根目錄已包含 <code>Dockerfile</code> 與 <code>.dockerignore</code>。在專案目錄下執行：</p>
+<pre><code>docker build -t script-tf:latest .</code></pre>
+<p>建置完成後可驗證：</p>
+<pre><code>docker images | grep script-tf</code></pre>
+</div>
+
+<h2>2. 匯出 Image 成檔案</h2>
+<div class="step">
+<p>沒有共用 registry 時，用 <code>docker save</code> 將 image 打包成單一檔案：</p>
+<pre><code>docker save script-tf:latest -o script-tf.tar</code></pre>
+<p>壓縮以加快傳輸（選用）：</p>
+<pre><code>gzip script-tf.tar   # 產生 script-tf.tar.gz</code></pre>
+</div>
+<div class="note">若兩機都能存取同一個內部 registry，更建議用 <code>docker push / pull</code>，可省略 save/load 步驟。</div>
+
+<h2>3. 傳輸到目標 Ubuntu 機器</h2>
+<div class="step">
+<p>用 SCP（建議，假設可 SSH 連線）：</p>
+<pre><code>scp script-tf.tar.gz user@&lt;ubuntu-ip&gt;:/home/user/</code></pre>
+<p>或用 USB 隨身碟複製過去，再插到目標機器上。</p>
+</div>
+
+<h2>4. 目標機器安裝 Docker CE（若尚未安裝）</h2>
+<div class="step">
+<pre><code># 移除舊版（若有）
+sudo apt-get remove docker docker-engine docker.io containerd runc
+
+# 安裝必要套件
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl gnupg
+
+# 加入 Docker 官方 GPG key
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+# 加入 Docker repository
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# 驗證
+sudo docker --version
+</code></pre>
+<p>（選用）讓目前使用者免 sudo 執行 docker：</p>
+<pre><code>sudo usermod -aG docker $USER
+newgrp docker</code></pre>
+</div>
+
+<h2>5. 載入 Image</h2>
+<div class="step">
+<pre><code>gunzip script-tf.tar.gz          # 若有壓縮，先解壓
+docker load -i script-tf.tar
+docker images | grep script-tf   # 確認載入成功</code></pre>
+</div>
+
+<h2>6. 確認 Host 上的 Ollama</h2>
+<div class="step">
+<pre><code># 安裝（若尚未安裝）
+curl -fsSL https://ollama.com/install.sh | sh
+
+# 下載模型
+ollama pull llama3.2:3b
+
+# 啟動服務（Linux 通常會註冊為 systemd service，自動啟動）
+sudo systemctl status ollama
+# 若未啟動：
+sudo systemctl enable --now ollama
+
+# 驗證
+curl http://localhost:11434
+# 應回應 "Ollama is running"
+</code></pre>
+</div>
+<div class="warn">容器需要透過 <code>host.docker.internal</code> 連到 host 上的 Ollama。Linux 上預設不支援這個 DNS 名稱，啟動容器時必須加上 <code>--add-host=host.docker.internal:host-gateway</code>（見下一步）。</div>
+
+<h2>7. 啟動容器</h2>
+<div class="step">
+<pre><code>docker run -d \
+  --name script-tf \
+  --restart unless-stopped \
+  -p 7860:7860 \
+  --add-host=host.docker.internal:host-gateway \
+  script-tf:latest</code></pre>
+<table>
+<tr><th>參數</th><th>用途</th></tr>
+<tr><td><code>-d</code></td><td>背景執行</td></tr>
+<tr><td><code>--restart unless-stopped</code></td><td>機器重開後自動啟動容器</td></tr>
+<tr><td><code>-p 7860:7860</code></td><td>對外開放 Web UI 連接埠</td></tr>
+<tr><td><code>--add-host=host.docker.internal:host-gateway</code></td><td>讓容器能解析到 host IP，連線 Ollama</td></tr>
+</table>
+<p>若要自訂 Ollama 模型或位址，可加上環境變數：</p>
+<pre><code>docker run -d \
+  --name script-tf \
+  --restart unless-stopped \
+  -p 7860:7860 \
+  --add-host=host.docker.internal:host-gateway \
+  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
+  -e OLLAMA_MODEL=llama3.2:3b \
+  script-tf:latest</code></pre>
+</div>
+
+<h2>8. 驗證部署</h2>
+<div class="step">
+<pre><code># 確認容器運行中
+docker ps
+
+# 查看 log
+docker logs -f script-tf
+
+# 瀏覽器開啟（從目標機器或同網段其他電腦）
+http://&lt;ubuntu-ip&gt;:7860</code></pre>
+<p>進入 Web UI 後，於右欄對話框測試自然語言指令，確認能連到 Ollama（若回應正常代表容器 → host 的連線成功）。</p>
+</div>
+
+<h2>9. 更新部署（後續版本）</h2>
+<div class="step">
+<pre><code># 在來源機器重新 build + save，傳輸新的 tar 後，於目標機器：
+docker stop script-tf && docker rm script-tf
+docker load -i script-tf-new.tar
+docker run -d --name script-tf --restart unless-stopped -p 7860:7860 \
+  --add-host=host.docker.internal:host-gateway script-tf:latest</code></pre>
+</div>
+
+<h2>10. 疑難排解</h2>
+<table>
+<tr><th>問題</th><th>排查方向</th></tr>
+<tr><td>瀏覽器無法開啟 7860</td><td>檢查 <code>docker ps</code> 容器是否在跑；檢查 Ubuntu 防火牆 <code>sudo ufw status</code>，需開放 7860</td></tr>
+<tr><td>AI 對話功能無回應 / 報錯</td><td>確認 <code>curl http://localhost:11434</code> 在 host 上有回應；確認容器內可解析 <code>host.docker.internal</code>（<code>docker exec -it script-tf getent hosts host.docker.internal</code>）</td></tr>
+<tr><td>容器啟動後立即退出</td><td><code>docker logs script-tf</code> 查看錯誤訊息，常見為依賴安裝失敗或 port 衝突</td></tr>
+<tr><td>Ollama 連線被拒絕</td><td>確認 Ollama 監聽位址未被限制為僅 127.0.0.1（預設行為對容器是足夠的，因為走 host-gateway），必要時設定 <code>OLLAMA_HOST=0.0.0.0</code> 並重啟服務</td></tr>
+</table>
+
+<h2>附錄：常用指令速查</h2>
+<pre><code># 進入容器內部 shell
+docker exec -it script-tf bash
+
+# 停止 / 啟動 / 重啟容器
+docker stop script-tf
+docker start script-tf
+docker restart script-tf
+
+# 移除容器與 image（重新部署前清理）
+docker rm -f script-tf
+docker rmi script-tf:latest</code></pre>
+
+</body>
+</html>
