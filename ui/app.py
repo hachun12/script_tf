@@ -240,19 +240,19 @@ CSS_TEXT = """
 .code-area textarea {
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
     font-size: 13px !important; line-height: 1.6 !important;
-    background: #f1f5f9 !important; border: 1px solid #cbd5e1 !important;
+    background: #f1f5f9 !important; color: #1e293b !important; border: 1px solid #cbd5e1 !important;
     border-radius: 4px !important;
 }
 .code-area-target textarea {
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
     font-size: 13px !important; line-height: 1.6 !important;
-    background: #f0fdf4 !important; border: 1px solid #86efac !important;
+    background: #f0fdf4 !important; color: #1e293b !important; border: 1px solid #86efac !important;
     border-radius: 4px !important;
 }
 .report-area textarea {
     font-family: 'Consolas', monospace !important;
     font-size: 12px !important; line-height: 1.5 !important;
-    background: #fffbeb !important; border: 1px solid #fde68a !important;
+    background: #fffbeb !important; color: #1e293b !important; border: 1px solid #fde68a !important;
 }
 
 /* 轉換按鈕 */
