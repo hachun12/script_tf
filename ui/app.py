@@ -110,12 +110,24 @@ def chat_respond(message: str, chat_history: list):
             chat_history[-1]["content"] += "\n\n⚠ 請先轉換劇本後再進行編修。"
             return chat_history, "", gr.update(visible=False), "", gr.update(), gr.update()
 
-        # 直接套用操作
-        summary, new_script = assistant.apply_action(action)
-        chat_history[-1]["content"] += f"\n\n✅ 已套用: {summary}"
+        # 規則式解析（source="rule"）為確定性、非注入來源，可直接套用。
+        # LLM 產生的操作（source="llm"）可能受不可信劇本內容影響（prompt injection），
+        # 一律進入確認區，等使用者親自按「套用」才執行，不自動修改劇本。
+        if action.get("source") == "rule":
+            summary, new_script = assistant.apply_action(action)
+            chat_history[-1]["content"] += f"\n\n✅ 已套用: {summary}"
+            return (
+                chat_history, "", gr.update(visible=False), "",
+                gr.update(value=new_script), f"✅ 已套用: {action.get('description', '')}"
+            )
+
+        # LLM 來源 → 暫存待確認，顯示確認區
+        _last_action = action
+        desc = action.get("description") or action.get("action", "（未命名操作）")
+        chat_history[-1]["content"] += "\n\n⏸ 此操作由 AI 解析產生，請確認後再套用。"
         return (
-            chat_history, "", gr.update(visible=False), "",
-            gr.update(value=new_script), f"✅ 已套用: {action.get('description', '')}"
+            chat_history, "", gr.update(visible=True), desc,
+            gr.update(), "⏸ 待確認 AI 操作"
         )
 
     return chat_history, "", gr.update(visible=False), "", gr.update(), gr.update()
