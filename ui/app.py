@@ -345,7 +345,9 @@ CSS_TEXT = """
 .col-chat { display: flex !important; flex-direction: column !important; }
 .col-chat > .block { flex: 1 !important; display: flex !important; flex-direction: column !important; }
 .col-chat .tabs { flex: 1 !important; display: flex !important; flex-direction: column !important; margin: 0 !important; }
-.col-chat .tabitem { flex: 1 !important; display: flex !important; flex-direction: column !important; padding: 4px 10px !important; }
+/* 注意：不可強制 display —— Gradio 靠 inline display:flex/none 切換分頁顯示，
+   !important 會蓋掉隱藏，導致三個分頁全部疊著出現 */
+.col-chat .tabitem { flex: 1 !important; flex-direction: column !important; padding: 4px 10px !important; }
 .col-chat .chatbot-box { flex: 1 !important; min-height: 200px !important; margin: 0 !important; }
 .col-chat .chatbot-box > div { height: 100% !important; }
 .col-chat .gap { gap: 6px !important; }

@@ -68,15 +68,18 @@ pip install -r requirements.txt
 
 前往 [ollama.com](https://ollama.com/) 下載安裝對應平台的版本。
 
-**下載模型：**
+**下載模型（預設使用 `gemma4:latest`）：**
 
 ```bash
-ollama pull llama3.2:3b
+ollama pull gemma4:latest
 ```
 
-> 模型大小約 2GB，下載時間視網路速度而定。
-> 如需更高品質的回應，可改用較大模型：`ollama pull llama3.1:8b`（約 4.7GB），
-> 但需在 `llm/assistant.py` 中將 `OLLAMA_MODEL` 改為 `"llama3.1:8b"`。
+> 模型大小約 9.6GB，下載時間視網路速度而定。
+> 如需改用其他模型，不必修改程式碼，啟動前設定環境變數即可：
+> ```bash
+> OLLAMA_MODEL="qwen3.5:27b" python3 cli.py ui
+> ```
+> Ollama 位址也可用 `OLLAMA_BASE_URL` 覆寫（預設 `http://localhost:11434`）。
 
 **啟動 Ollama 服務：**
 
@@ -90,11 +93,39 @@ ollama serve
 ### 6. 啟動服務
 
 ```bash
-# 啟動 Web UI（推薦）
+# Ubuntu / macOS：一鍵啟動（自動處理依賴與環境變數）
+./start.sh
+
+# Windows：一鍵啟動
+start.bat
+
+# 或手動啟動 Web UI
 python cli.py ui
 ```
 
 啟動後開啟瀏覽器 http://localhost:7860 即可使用。
+
+## Docker 部署（Ubuntu）
+
+若要部署到其他 Ubuntu 機器，建議使用 Docker 容器化部署，完整步驟（含 Docker 安裝、
+離線傳輸 image、疑難排解）見 [docs/deployment_sop.html](docs/deployment_sop.html)。摘要：
+
+```bash
+# 建置 image（專案已含 Dockerfile）
+docker build -t script-tf:latest .
+
+# 啟動容器（Ollama 跑在 host 上，容器透過 host-gateway 連線）
+docker run -d \
+  --name script-tf \
+  --restart unless-stopped \
+  -p 7860:7860 \
+  --add-host=host.docker.internal:host-gateway \
+  -e OLLAMA_MODEL=gemma4:latest \
+  script-tf:latest
+```
+
+> 容器不含 Ollama；目標機器需自行安裝 Ollama 並下載模型（見部署步驟第 5 步）。
+> 本機開發測試用 `./start.sh` 即可，不需要 Docker。
 
 ## CLI 命令
 
@@ -197,7 +228,11 @@ script_tf/
 │   └── app.py            # Gradio Web UI
 ├── examples/             # 範例劇本
 ├── tests/                # 37 個測試案例
+├── docs/                 # 使用手冊、Docker 部署 SOP
 ├── cli.py                # CLI 入口
+├── start.sh              # Ubuntu / macOS 一鍵啟動
+├── start.bat             # Windows 一鍵啟動
+├── Dockerfile            # 容器化部署（見 docs/deployment_sop.html）
 ├── requirements.txt
 └── readme.md
 ```
