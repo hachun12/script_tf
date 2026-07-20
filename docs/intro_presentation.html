@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Script TF — 3 分鐘軟體介紹</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --navy: #1a2332; --navy2: #2c3e50;
+    --blue: #0ea5e9; --green: #22c55e; --orange: #f59e0b;
+    --ink: #1e293b; --muted: #64748b; --bg: #e8ecf1;
+  }
+  html, body { height: 100%; background: #0f172a; overflow: hidden;
+    font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif; }
+
+  .deck { position: relative; width: 100vw; height: 100vh; }
+  .slide {
+    position: absolute; inset: 0; padding: 4.5vh 6vw;
+    display: flex; flex-direction: column; justify-content: center;
+    opacity: 0; visibility: hidden; transform: translateX(4vw);
+    transition: opacity .45s ease, transform .45s ease, visibility .45s;
+    background: var(--bg); color: var(--ink);
+  }
+  .slide.active { opacity: 1; visibility: visible; transform: none; }
+
+  /* 時間標籤 */
+  .timecode {
+    position: absolute; top: 3.2vh; right: 6vw;
+    font-size: 1.7vh; font-weight: 700; letter-spacing: 1px;
+    color: #fff; background: var(--navy); padding: .6vh 1.4vh; border-radius: 99px;
+    opacity: .85;
+  }
+
+  h1 { font-size: 6.2vh; color: var(--navy); line-height: 1.25; }
+  h2 { font-size: 4.6vh; color: var(--navy); margin-bottom: 2.6vh; line-height: 1.3; }
+  h2 .bar { display: inline-block; width: .9vh; height: 3.6vh; border-radius: 4px;
+    margin-right: 1.6vh; vertical-align: -0.4vh; }
+  .lead { font-size: 2.6vh; color: var(--muted); line-height: 1.7; }
+
+  ul.points { list-style: none; font-size: 2.5vh; line-height: 1.65; }
+  ul.points li { margin-bottom: 1.8vh; padding-left: 3.2vh; position: relative; }
+  ul.points li::before { content: "▸"; position: absolute; left: 0; color: var(--orange); font-weight: 700; }
+  ul.points b { color: var(--navy); }
+  .kbd { font-family: Consolas, monospace; background: #dbe3ec; border: 1px solid #b8c4d4;
+    border-radius: 5px; padding: .1em .45em; font-size: .88em; color: var(--navy); }
+
+  /* 兩欄：文字 + 截圖 */
+  .cols { display: flex; gap: 4vw; align-items: center; flex: 0 1 auto; min-height: 0; }
+  .cols .txt { flex: 0 0 34%; }
+  .cols .shot { flex: 1; min-width: 0; text-align: center; }
+  .shot img {
+    max-width: 100%; max-height: 66vh; border-radius: 10px;
+    box-shadow: 0 14px 40px rgba(15,23,42,.35); border: 1px solid #cbd5e1;
+    background: #fff;
+  }
+  .shot figcaption { margin-top: 1.4vh; font-size: 1.9vh; color: var(--muted); }
+
+  /* 封面 */
+  .cover { background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%); color: #fff; }
+  .cover h1 { color: #fff; font-size: 7.4vh; }
+  .cover .gear { font-size: 8vh; margin-bottom: 2vh; }
+  .cover .sub { font-size: 3vh; color: #94a3b8; margin-top: 2vh; line-height: 1.6; }
+  .cover .badges { margin-top: 5vh; display: flex; gap: 1.6vh; flex-wrap: wrap; }
+  .badge { padding: 1vh 2.4vh; border-radius: 99px; font-size: 2.1vh; font-weight: 700; }
+  .b-blue { background: rgba(14,165,233,.18); color: #7dd3fc; border: 1px solid #0ea5e9; }
+  .b-green { background: rgba(34,197,94,.18); color: #86efac; border: 1px solid #22c55e; }
+  .b-orange { background: rgba(245,158,11,.18); color: #fcd34d; border: 1px solid #f59e0b; }
+  .cover .hint { position: absolute; bottom: 8vh; left: 0; right: 0; text-align: center;
+    color: #64748b; font-size: 1.9vh; }
+
+  /* 流程圖 */
+  .pipeline { display: flex; align-items: center; justify-content: center; gap: 1.2vw;
+    margin-top: 4vh; flex-wrap: wrap; }
+  .pipe-box { padding: 2vh 2.2vw; border-radius: 10px; font-size: 2.3vh; font-weight: 700;
+    color: #fff; text-align: center; line-height: 1.4; box-shadow: 0 4px 14px rgba(15,23,42,.18); }
+  .pipe-box small { display: block; font-weight: 400; font-size: 1.7vh; opacity: .85; }
+  .p-src { background: linear-gradient(135deg, #0369a1, var(--blue)); }
+  .p-ir  { background: linear-gradient(135deg, #6d28d9, #8b5cf6); }
+  .p-tgt { background: linear-gradient(135deg, #15803d, var(--green)); }
+  .p-ai  { background: linear-gradient(135deg, #b45309, var(--orange)); }
+  .arrow { font-size: 3.4vh; color: var(--muted); font-weight: 700; }
+
+  .brand-table { margin-top: 4vh; border-collapse: collapse; font-size: 2.2vh; }
+  .brand-table th, .brand-table td { padding: 1.2vh 2.4vw; border: 1px solid #cbd5e1; text-align: left; }
+  .brand-table th { background: var(--navy); color: #fff; }
+  .brand-table td { background: #fff; }
+
+  /* 結尾 */
+  .end-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2.6vh 3vw; margin-top: 1vh; }
+  .end-card { background: #fff; border-radius: 10px; padding: 2.6vh 2.4vw;
+    border-top: .7vh solid var(--blue); box-shadow: 0 4px 14px rgba(15,23,42,.12); }
+  .end-card:nth-child(2) { border-top-color: var(--green); }
+  .end-card:nth-child(3) { border-top-color: var(--orange); }
+  .end-card:nth-child(4) { border-top-color: #8b5cf6; }
+  .end-card h3 { font-size: 2.5vh; color: var(--navy); margin-bottom: 1.2vh; }
+  .end-card p { font-size: 2.1vh; color: var(--muted); line-height: 1.6; }
+  .end-card code { font-family: Consolas, monospace; font-size: .92em; color: #0369a1; }
+
+  /* 導覽列 */
+  .nav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
+    display: flex; align-items: center; gap: 2vh; padding: 1.2vh 2.4vh;
+    background: rgba(15, 23, 42, .92); color: #94a3b8; font-size: 1.9vh;
+  }
+  .nav button { background: #334155; color: #e2e8f0; border: none; border-radius: 6px;
+    padding: .8vh 2vh; font-size: 1.9vh; cursor: pointer; }
+  .nav button:hover { background: #475569; }
+  .nav .counter { font-weight: 700; color: #e2e8f0; }
+  .nav .keys { margin-left: auto; }
+  .nav .timer { font-family: Consolas, monospace; font-weight: 700; color: #4ade80; min-width: 8ch; }
+  .nav .timer.over { color: #f87171; }
+  .progress { position: fixed; bottom: 0; left: 0; height: .5vh; background:
+    linear-gradient(90deg, var(--blue), var(--green), var(--orange)); width: 0; z-index: 11;
+    transition: width .3s ease; }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <!-- 1. 封面 0:00 -->
+  <section class="slide cover active">
+    <div class="gear">⚙</div>
+    <h1>Script TF</h1>
+    <h1 style="font-size:4.6vh; color:#cbd5e1; margin-top:1vh;">跨品牌機器人劇本轉換工具</h1>
+    <p class="sub">離線運作的工業機器人程式轉換平台<br>
+      規則引擎精確轉換 × 本地 LLM 對話式編修</p>
+    <div class="badges">
+      <span class="badge b-blue">FANUC / ABB / KUKA / RUBY</span>
+      <span class="badge b-green">完全離線・資料不外流</span>
+      <span class="badge b-orange">AI 自然語言編修</span>
+    </div>
+    <div class="hint">按 → 或空白鍵開始（右下角 T 鍵可啟動 3 分鐘計時）</div>
+  </section>
+
+  <!-- 2. 問題與架構 0:20 -->
+  <section class="slide">
+    <span class="timecode">0:20</span>
+    <h2><span class="bar" style="background:var(--blue)"></span>為什麼需要 Script TF？</h2>
+    <p class="lead">每家機器人品牌都有自己的程式語言——換品牌、多品牌並存時，
+      工程師得逐行人工改寫，慢且容易出錯。</p>
+    <table class="brand-table">
+      <tr><th>品牌</th><th>語言</th><th>副檔名</th></tr>
+      <tr><td>FANUC</td><td>TP / LS</td><td>.ls .tp</td></tr>
+      <tr><td>ABB</td><td>RAPID</td><td>.mod .rapid</td></tr>
+      <tr><td>KUKA</td><td>KRL</td><td>.src .krl</td></tr>
+      <tr><td>RUBY (PMC)</td><td>Ruby Script</td><td>.script .rb</td></tr>
+    </table>
+    <div class="pipeline">
+      <div class="pipe-box p-src">來源劇本<small>Parser 解析</small></div>
+      <div class="arrow">→</div>
+      <div class="pipe-box p-ir">IR 中間表示層<small>14 種標準動作</small></div>
+      <div class="arrow">→</div>
+      <div class="pipe-box p-tgt">目標劇本<small>Emitter 生成</small></div>
+      <div class="arrow" style="font-size:2.4vh;">＋</div>
+      <div class="pipe-box p-ai">AI 對話編修<small>規則式 + 本地 LLM</small></div>
+    </div>
+  </section>
+
+  <!-- 3. 介面總覽 0:45 -->
+  <section class="slide">
+    <span class="timecode">0:45</span>
+    <h2><span class="bar" style="background:var(--blue)"></span>三欄式操作介面，一眼看懂</h2>
+    <div class="cols">
+      <div class="txt">
+        <ul class="points">
+          <li><b>左欄</b>：上傳或貼入來源劇本，依副檔名<b>自動偵測品牌</b></li>
+          <li><b>中欄</b>：選目標品牌，一鍵轉換、一鍵匯出</li>
+          <li><b>右欄</b>：AI 助手——對話編修／轉換報告／使用說明</li>
+          <li>狀態列即時顯示轉換結果與 <b>Ollama 連線狀態</b></li>
+        </ul>
+      </div>
+      <figure class="shot">
+        <img src="screenshots/ui_overview.png" alt="三欄式介面總覽">
+        <figcaption>瀏覽器開啟 localhost:7860 即可使用，無需安裝客戶端</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- 4. 一鍵轉換 1:10 -->
+  <section class="slide">
+    <span class="timecode">1:10</span>
+    <h2><span class="bar" style="background:var(--green)"></span>一鍵轉換：FANUC → ABB 實例</h2>
+    <div class="cols">
+      <div class="txt">
+        <ul class="points">
+          <li>447 bytes 的取放料程式，<b>秒級</b>完成轉換</li>
+          <li>速度、I/O、等待、註解……全部對應到目標語法</li>
+          <li>無法自動轉換的指令<b>明確標註 WARNING</b>，絕不靜默丟失</li>
+          <li>狀態列統計：<b>24/28 成功、4 個警告</b>，風險一目了然</li>
+        </ul>
+      </div>
+      <figure class="shot">
+        <img src="screenshots/conversion_result.png" alt="FANUC 轉 ABB 轉換結果">
+        <figcaption>左：FANUC LS 原始碼　右：轉出的 ABB RAPID，警告以註解內嵌</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- 5. 逐行報告 1:35 -->
+  <section class="slide">
+    <span class="timecode">1:35</span>
+    <h2><span class="bar" style="background:var(--green)"></span>逐行對照報告：可追溯、可稽核</h2>
+    <div class="cols">
+      <div class="txt">
+        <ul class="points">
+          <li>每一行標註 <b>[OK] / [WARN]</b>，原始碼與轉換結果並列</li>
+          <li>警告附<b>原因說明</b>，工程師知道該人工確認哪幾行</li>
+          <li>總計摘要：總動作數／成功／警告／錯誤</li>
+          <li>對安全敏感的產線程式，<b>轉換過程全程留痕</b></li>
+        </ul>
+      </div>
+      <figure class="shot">
+        <img src="screenshots/conversion_report.png" alt="逐行對照轉換報告">
+        <figcaption>「轉換報告」分頁：28 個動作、24 成功、4 警告、0 錯誤</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- 6. 自然語言編修 2:00 -->
+  <section class="slide">
+    <span class="timecode">2:00</span>
+    <h2><span class="bar" style="background:var(--orange)"></span>用一句話改劇本</h2>
+    <div class="cols">
+      <div class="txt">
+        <ul class="points">
+          <li>輸入<b>「速度提高 50%」</b>，逐行自動套用並回報修改明細</li>
+          <li>支援：調速、刪行、插入等待／I/O、解釋指令……</li>
+          <li>規則引擎解析的指令<b>直接執行</b>，不需要網路</li>
+          <li>LLM 產生的操作<b>需人工確認才套用</b>——防止劇本內容的提示注入</li>
+        </ul>
+      </div>
+      <figure class="shot">
+        <img src="screenshots/chat_modify_speed.png" alt="對話式速度修改">
+        <figcaption>第 8 行 50%→75%、第 10 行 500→750……修改結果即時反映在中欄</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- 7. 本地 AI 2:25 -->
+  <section class="slide">
+    <span class="timecode">2:25</span>
+    <h2><span class="bar" style="background:var(--orange)"></span>本地 LLM：能討論、能建議，資料不出廠</h2>
+    <div class="cols">
+      <div class="txt">
+        <ul class="points">
+          <li>問它<b>「可以怎麼優化？」</b>——分析劇本、給出具體建議</li>
+          <li>後端是 <b>Ollama + gemma4</b>，跑在自己的機器上，<b>完全離線</b></li>
+          <li>製程程式屬敏感資產，<b>不需上傳任何雲端服務</b></li>
+          <li>沒裝 Ollama？規則式指令照常可用，功能<b>優雅降級</b></li>
+        </ul>
+      </div>
+      <figure class="shot">
+        <img src="screenshots/chat.png" alt="AI 優化建議對話">
+        <figcaption>AI 助手根據來源劇本提出減少指令數量、統一命名等建議</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- 8. 結尾 2:45 -->
+  <section class="slide">
+    <span class="timecode">2:45</span>
+    <h2><span class="bar" style="background:#8b5cf6"></span>易擴充、易部署，今天就能用</h2>
+    <div class="end-grid">
+      <div class="end-card">
+        <h3>🧩 新增品牌零門檻</h3>
+        <p>簡單品牌只要一份 <code>definition.yaml</code>；
+          複雜語法再加 Python plugin（Parser / Emitter）。</p>
+      </div>
+      <div class="end-card">
+        <h3>🚀 部署方式</h3>
+        <p>Docker 容器化，開機自動復活。</p>
+      </div>
+      <div class="end-card">
+        <h3>✅ 品質保證</h3>
+        <p>48 個自動化測試全數通過；
+          轉換警告、LLM 操作確認機制雙重把關。</p>
+      </div>
+      <div class="end-card">
+        <h3>📦 完整文件</h3>
+        <p>內附使用手冊與 Docker 部署 SOP，
+          從安裝到疑難排解一應俱全。</p>
+      </div>
+    </div>
+    <p class="lead" style="margin-top:3.4vh; text-align:center;">
+      <b style="color:var(--navy); font-size:3vh;">讓機器人劇本移植，從「幾天」變成「幾秒」。</b><br>謝謝聆聽！
+    </p>
+  </section>
+
+</div>
+
+<div class="nav">
+  <button id="prev">◀ 上一頁</button>
+  <button id="next">下一頁 ▶</button>
+  <span class="counter"><span id="cur">1</span> / <span id="total">8</span></span>
+  <span class="timer" id="timer">3:00</span>
+  <span class="keys">← → 或空白鍵翻頁　·　T 計時　·　F 全螢幕</span>
+</div>
+<div class="progress" id="progress"></div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  let idx = 0;
+  document.getElementById('total').textContent = slides.length;
+
+  function show(i) {
+    idx = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach((s, n) => s.classList.toggle('active', n === idx));
+    document.getElementById('cur').textContent = idx + 1;
+    document.getElementById('progress').style.width =
+      ((idx + 1) / slides.length * 100) + '%';
+  }
+
+  document.getElementById('prev').onclick = () => show(idx - 1);
+  document.getElementById('next').onclick = () => show(idx + 1);
+
+  /* 3 分鐘倒數計時 */
+  let remain = 180, ticking = null;
+  const timerEl = document.getElementById('timer');
+  function renderTimer() {
+    const sign = remain < 0 ? '-' : '';
+    const abs = Math.abs(remain);
+    timerEl.textContent = sign + Math.floor(abs / 60) + ':' +
+      String(abs % 60).padStart(2, '0');
+    timerEl.classList.toggle('over', remain < 0);
+  }
+  function toggleTimer() {
+    if (ticking) { clearInterval(ticking); ticking = null; return; }
+    ticking = setInterval(() => { remain--; renderTimer(); }, 1000);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); show(idx + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(idx - 1); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 't' || e.key === 'T') toggleTimer();
+    else if (e.key === 'f' || e.key === 'F') {
+      document.fullscreenElement ? document.exitFullscreen()
+        : document.documentElement.requestFullscreen();
+    }
+  });
+  renderTimer();
+  show(0);
+</script>
+</body>
+</html>
