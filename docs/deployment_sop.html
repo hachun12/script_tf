@@ -23,7 +23,7 @@
 <body>
 
 <h1>Script TF 容器化部署 SOP</h1>
-<p><span class="badge">版本 1.1</span><span class="badge">更新日期 2026-06-24</span></p>
+<p><span class="badge">版本 1.2</span><span class="badge">更新日期 2026-07-20</span></p>
 <p>目的：將 <strong>Script TF</strong>（跨品牌機器人劇本轉換工具）打包成 Docker image，部署到另一台 Ubuntu PC 上運行。目標機器的 <strong>Ollama 跑在 host（非容器）</strong>，提供進階 AI 對話功能。</p>
 
 <h2>0. 前置準備</h2>
@@ -84,8 +84,8 @@ docker images | grep script-tf</code></pre>
 <pre><code># 安裝（若尚未安裝）
 curl -fsSL https://ollama.com/install.sh | sh
 
-# 下載模型
-ollama pull llama3.2:3b
+# 下載模型（程式預設使用 gemma4:latest，約 9.6GB）
+ollama pull gemma4:latest
 
 # 啟動服務（Linux 通常會註冊為 systemd service，自動啟動）
 sudo systemctl status ollama
@@ -121,8 +121,12 @@ curl http://localhost:11434
   -p 7860:7860 \
   --add-host=host.docker.internal:host-gateway \
   -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  -e OLLAMA_MODEL=llama3.2:3b \
+  -e OLLAMA_MODEL=gemma4:latest \
   script-tf:latest</code></pre>
+<p>注意：<code>OLLAMA_MODEL</code> 必須與 host 上 <code>ollama list</code> 已下載的模型一致，
+否則程式找不到模型會退回基本模式（規則式指令仍可用，但無自由對話）。
+若目標機器記憶體不足跑 gemma4（建議 16GB 以上），可改用小模型，例如
+<code>ollama pull llama3.2:3b</code> 並設 <code>-e OLLAMA_MODEL=llama3.2:3b</code>。</p>
 </div>
 
 <h2>5. 驗證部署</h2>

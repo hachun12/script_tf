@@ -70,7 +70,7 @@ pip install -r requirements.txt
 # 3.（可選）安裝 Ollama 以啟用進階自然語言功能
 #    下載 Ollama: https://ollama.com
 #    安裝完成後拉取模型：
-ollama pull llama3.2:3b
+ollama pull gemma4:latest
 ```
 
 ### 驗證安裝
@@ -589,7 +589,7 @@ ollama serve
 ollama list
 
 # 如未安裝模型
-ollama pull llama3.2:3b
+ollama pull gemma4:latest
 ```
 
 ### Q4: 轉換後的速度單位不對？
